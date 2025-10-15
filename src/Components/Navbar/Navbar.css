@@ -1,5 +1,4 @@
-.navbar{
-    width: 100%;
+.navbar_container{
     height: 70px;
     display: flex;
     align-items: center;
