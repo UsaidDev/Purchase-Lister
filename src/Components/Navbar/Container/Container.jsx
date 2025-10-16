@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { FaUpload } from "react-icons/fa";
@@ -9,8 +9,9 @@ const Container = () => {
   const [itemImage, SetItemImage] = useState("");
   const [itemPrice, SetItemPrice] = useState("");
   const [items, Setitems] = useState([]);
+  const [editIndex, setEditIndex] = useState(null);
+  const fileInputRef = useRef(null); 
 
-  // Convert uploaded image to base64 for preview
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -24,7 +25,6 @@ const Container = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!itemName || !itemImage || !itemPrice) return;
 
     const newItem = {
@@ -33,29 +33,52 @@ const Container = () => {
       price: itemPrice,
     };
 
-    Setitems([...items, newItem]);
+    if (editIndex !== null) {
+      const updatedItems = [...items];
+      updatedItems[editIndex] = newItem;
+      Setitems(updatedItems);
+      setEditIndex(null);
+    } else {
+      Setitems([...items, newItem]);
+    }
 
+    // Reset form after submit
     SetItemName("");
     SetItemImage("");
     SetItemPrice("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // clear selected file
+    }
   };
 
   const handleDelete = (index) => {
     const updatedItems = items.filter((_, i) => i !== index);
     Setitems(updatedItems);
+    if (editIndex === index) {
+      setEditIndex(null);
+      SetItemName("");
+      SetItemImage("");
+      SetItemPrice("");
+    }
   };
 
-  const handleUpdate = () => {
-    console.log("Updated");
+  const handleUpdate = (index) => {
+    const itemToEdit = items[index];
+    SetItemName(itemToEdit.name);
+    SetItemImage(itemToEdit.image);
+    SetItemPrice(itemToEdit.price);
+    setEditIndex(index);
   };
 
   return (
     <div className="container my-5">
       <div className="row g-4">
-        {/* Left Side - Add Item */}
+        {/* Left Side - Add / Update Item */}
         <div className="col-12 col-md-6">
           <div className="card border-0 shadow-sm p-4">
-            <h5 className="fw-semibold mb-4">Add Purchase Item</h5>
+            <h5 className="fw-semibold mb-4">
+              {editIndex !== null ? "Update Item" : "Add Purchase Item"}
+            </h5>
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Item Name</label>
@@ -74,13 +97,24 @@ const Container = () => {
                   <input
                     type="file"
                     accept="image/*"
+                    ref={fileInputRef}
                     onChange={handleImageChange}
                     className="form-control shadow-none"
                   />
-                  <span className="input-group-text">
-                    <FaUpload />
+                  <span className="input-group-text bg-light">
+                    <FaUpload className="text-dark" />
                   </span>
                 </div>
+                {itemImage && (
+                  <img
+                    src={itemImage}
+                    alt="Preview"
+                    className="mt-3 rounded"
+                    width="100"
+                    height="100"
+                    style={{ objectFit: "cover" }}
+                  />
+                )}
               </div>
 
               <div className="mb-4">
@@ -93,9 +127,9 @@ const Container = () => {
                   placeholder="Enter budget amount"
                 />
               </div>
-              
+
               <button type="submit" className="btn btn-dark mt-2 w-100">
-                Add Item
+                {editIndex !== null ? "Update Item" : "Add Item"}
               </button>
             </form>
           </div>
@@ -140,11 +174,14 @@ const Container = () => {
                   <div className="d-flex flex-column flex-sm-row gap-2">
                     <button
                       className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center"
-                      onClick={(e) => handleUpdate(e.target.value)}
+                      onClick={() => handleUpdate(index)}
                     >
                       <i
                         className="bi bi-pencil-square me-1"
-                        style={{ background: "none", color: "white" }}
+                        style={{
+                          color: "white",
+                          background: "transparent",
+                        }}
                       ></i>
                       Update
                     </button>
@@ -154,8 +191,11 @@ const Container = () => {
                       onClick={() => handleDelete(index)}
                     >
                       <i
-                        className="bi bi-trash me-1 tarsh"
-                        style={{ background: "none", color: "white" }}
+                        className="bi bi-trash me-1"
+                        style={{
+                          color: "white",
+                          background: "transparent",
+                        }}
                       ></i>
                       Delete
                     </button>
