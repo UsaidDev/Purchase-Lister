@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaPen, FaTrash, FaUpload } from "react-icons/fa"; // ✅ Added icons
+import "bootstrap-icons/font/bootstrap-icons.css";
+
+import { FaUpload } from "react-icons/fa";
 
 const Container = () => {
   const [itemName, SetItemName] = useState("");
@@ -45,9 +47,6 @@ const Container = () => {
 
   return (
     <div className="container my-5">
-      <h4 className="fw-semibold mb-4">
-        🛒 Purchase Lister
-      </h4>
       <div className="row g-4">
         {/* Left Side - Add Item */}
         <div className="col-12 col-md-6">
@@ -135,14 +134,17 @@ const Container = () => {
                   </div>
 
                   <div className="d-flex gap-2">
-                    <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-                      <FaPen /> Update
+                    <button className="btn btn-secondary btn-sm d-flex align-items-center gap-1">
+                      <i class="bi bi-pencil-square bg-transparent"></i>
+                      Update
                     </button>
+
                     <button
                       className="btn btn-danger btn-sm d-flex align-items-center gap-1"
                       onClick={() => handleDelete(index)}
                     >
-                      <FaTrash /> Delete
+                      <i className="bi bi-trash text-white bg-transparent"></i>
+                      Delete
                     </button>
                   </div>
                 </div>
