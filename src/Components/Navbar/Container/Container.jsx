@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-
 import { FaUpload } from "react-icons/fa";
+import './Container.css'
 
 const Container = () => {
   const [itemName, SetItemName] = useState("");
@@ -90,7 +90,7 @@ const Container = () => {
                 />
               </div>
 
-              <button type="submit" className="btn btn-dark w-100">
+              <button type="submit" className="btn btn-dark mt-2 w-100">
                 Add Item
               </button>
             </form>
