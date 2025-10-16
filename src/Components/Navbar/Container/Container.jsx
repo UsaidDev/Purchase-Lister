@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { FaUpload } from "react-icons/fa";
-import './Container.css'
+import "./Container.css";
 
 const Container = () => {
   const [itemName, SetItemName] = useState("");
@@ -43,6 +43,10 @@ const Container = () => {
   const handleDelete = (index) => {
     const updatedItems = items.filter((_, i) => i !== index);
     Setitems(updatedItems);
+  };
+
+  const handleUpdate = () => {
+    console.log("Updated");
   };
 
   return (
@@ -89,7 +93,7 @@ const Container = () => {
                   placeholder="Enter budget amount"
                 />
               </div>
-
+              
               <button type="submit" className="btn btn-dark mt-2 w-100">
                 Add Item
               </button>
@@ -133,17 +137,26 @@ const Container = () => {
                     </div>
                   </div>
 
-                  <div className="d-flex gap-2">
-                    <button className="btn btn-secondary btn-sm d-flex align-items-center gap-1">
-                      <i class="bi bi-pencil-square bg-transparent"></i>
+                  <div className="d-flex flex-column flex-sm-row gap-2">
+                    <button
+                      className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center"
+                      onClick={(e) => handleUpdate(e.target.value)}
+                    >
+                      <i
+                        className="bi bi-pencil-square me-1"
+                        style={{ background: "none", color: "white" }}
+                      ></i>
                       Update
                     </button>
 
                     <button
-                      className="btn btn-danger btn-sm d-flex align-items-center gap-1"
+                      className="btn btn-danger btn-sm d-flex align-items-center justify-content-center"
                       onClick={() => handleDelete(index)}
                     >
-                      <i className="bi bi-trash text-white bg-transparent"></i>
+                      <i
+                        className="bi bi-trash me-1 tarsh"
+                        style={{ background: "none", color: "white" }}
+                      ></i>
                       Delete
                     </button>
                   </div>
