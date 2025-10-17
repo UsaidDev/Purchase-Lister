@@ -10,8 +10,8 @@ const Container = () => {
   const [itemPrice, SetItemPrice] = useState("");
   const [items, Setitems] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
-  const fileInputRef = useRef(null); 
-
+  const fileInputRef = useRef(null);
+  
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -22,7 +22,6 @@ const Container = () => {
       reader.readAsDataURL(file);
     }
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!itemName || !itemImage || !itemPrice) return;
@@ -47,7 +46,7 @@ const Container = () => {
     SetItemImage("");
     SetItemPrice("");
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // clear selected file
+      fileInputRef.current.value = "";
     }
   };
 
@@ -71,7 +70,7 @@ const Container = () => {
   };
 
   return (
-    <div className="container my-5">
+    <div className="container mb-5">
       <div className="row g-4">
         {/* Left Side - Add / Update Item */}
         <div className="col-12 col-md-6">

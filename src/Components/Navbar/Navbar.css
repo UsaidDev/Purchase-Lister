@@ -1,21 +1,8 @@
-.navbar_container{
-    height: 70px;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
+.navbar {
+  border-bottom: 1px solid #e9ecef;
 }
-.nav-left{
-    display: flex;
-    align-items: center;
-    color: #000;
-}
-.nav-left i{
-    font-size: 18px;
-    margin-right: 5px;
-    color: #000;
-}
-.site-name{
-    font-size: 18px;
-    /* font-weight: 600; */
-    letter-spacing: 0.2px;
+
+.btn-outline-secondary:hover {
+  background-color: #f8f9fa;
+  color: #000;
 }
