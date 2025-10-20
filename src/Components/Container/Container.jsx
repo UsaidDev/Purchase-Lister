@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { FaUpload, FaTimes } from "react-icons/fa";
-import { db } from "../../Firebase/firebase";
+import { db, auth } from "../../Firebase/firebase";
 import {
   collection,
   addDoc,
@@ -10,7 +10,10 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  query,
+  where,
 } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import "./Container.css";
 
 const Container = () => {
@@ -20,22 +23,50 @@ const Container = () => {
   const [items, SetItems] = useState([]);
   const [editId, setEditId] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [user, setUser] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Listen for auth changes
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      SetItems(data);
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser); // null if logged out
+      // Clear edit state if user logs out
+      if (!currentUser) {
+        setEditId(null);
+        SetItemName("");
+        SetItemImage("");
+        SetItemPrice("");
+      }
     });
-
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
+  // Fetch items:
+  // - If user is null (not logged in) -> show ALL items (read-only)
+  // - If user is logged in -> show ONLY items where userId === user.uid
+  useEffect(() => {
+    let unsub = () => {};
+    if (user) {
+      // Logged in: show only this user's items
+      const q = query(collection(db, "items"), where("userId", "==", user.uid));
+      unsub = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        SetItems(data);
+      });
+    } else {
+      // Not logged in: show all items (read-only)
+      unsub = onSnapshot(collection(db, "items"), (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        SetItems(data);
+      });
+    }
+
+    return () => unsub();
+  }, [user]);
+
+  // Image selection -> base64 preview
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => SetItemImage(reader.result);
@@ -43,30 +74,45 @@ const Container = () => {
     }
   };
 
+  // Add or update item (only allowed when logged in)
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      alert("Please log in to add items.");
+      return;
+    }
     if (!itemName || !itemImage || !itemPrice) return;
 
-    const newItem = { name: itemName, image: itemImage, price: itemPrice };
+    const payload = {
+      name: itemName,
+      image: itemImage,
+      price: itemPrice,
+      userId: user.uid,
+      userEmail: user.email || null,
+      createdAt: new Date().toISOString(),
+    };
 
     try {
       if (editId) {
-        const itemRef = doc(db, "items", editId);
-        await updateDoc(itemRef, newItem);
+        const ref = doc(db, "items", editId);
+        await updateDoc(ref, payload);
         setEditId(null);
       } else {
-        await addDoc(collection(db, "items"), newItem);
+        await addDoc(collection(db, "items"), payload);
       }
+      // reset
       SetItemName("");
       SetItemImage("");
       SetItemPrice("");
       if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (error) {
-      console.error("Error saving item: ", error);
+    } catch (err) {
+      console.error("Error saving item:", err);
     }
   };
 
+  // Delete item (only allowed when logged in AND owner)
   const handleDelete = async (id) => {
+    if (!user) return;
     try {
       await deleteDoc(doc(db, "items", id));
       if (editId === id) {
@@ -75,27 +121,33 @@ const Container = () => {
         SetItemImage("");
         SetItemPrice("");
       }
-    } catch (error) {
-      console.error("Error deleting item: ", error);
+    } catch (err) {
+      console.error("Error deleting item:", err);
     }
   };
 
+  // Put item values into form for editing (only owner should call this)
   const handleUpdate = (item) => {
+    if (!user || item.userId !== user.uid) return;
     SetItemName(item.name);
     SetItemImage(item.image);
     SetItemPrice(item.price);
     setEditId(item.id);
+    // ensure file input cleared so user can re-upload if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <div className="container mb-5">
       <div className="row g-4">
-        {/* Left Side - Add / Update Item */}
+        {/* Left Side - Add / Update Item (form disabled if not logged in) */}
         <div className="col-12 col-md-6">
           <div className="card border-0 shadow-sm p-4">
             <h5 className="fw-semibold mb-4">
               {editId ? "Update Item" : "Add Purchase Item"}
             </h5>
+
+            {/* If user not logged in, we still show the form but disable inputs and show message */}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Item Name</label>
@@ -105,6 +157,7 @@ const Container = () => {
                   onChange={(e) => SetItemName(e.target.value)}
                   className="form-control shadow-none"
                   placeholder="Enter item name"
+                  disabled={!user}
                 />
               </div>
 
@@ -117,11 +170,13 @@ const Container = () => {
                     ref={fileInputRef}
                     onChange={handleImageChange}
                     className="form-control shadow-none"
+                    disabled={!user}
                   />
                   <span className="input-group-text bg-light">
                     <FaUpload className="text-dark" />
                   </span>
                 </div>
+
                 {itemImage && (
                   <img
                     src={itemImage}
@@ -129,8 +184,8 @@ const Container = () => {
                     className="mt-3 rounded"
                     width="100"
                     height="100"
-                    style={{ objectFit: "cover", cursor: "pointer" }}
-                    onClick={() => setSelectedImage(itemImage)}
+                    style={{ objectFit: "cover", cursor: user ? "pointer" : "default" }}
+                    onClick={() => user && setSelectedImage(itemImage)}
                   />
                 )}
               </div>
@@ -143,12 +198,23 @@ const Container = () => {
                   onChange={(e) => SetItemPrice(e.target.value)}
                   className="form-control shadow-none"
                   placeholder="Enter budget amount"
+                  disabled={!user}
                 />
               </div>
 
-              <button type="submit" className="btn btn-dark mt-2 w-100">
-                {editId ? "Update Item" : "Add Item"}
+              <button
+                type="submit"
+                className="btn btn-dark mt-2 w-100"
+                disabled={!user}
+              >
+                {user ? (editId ? "Update Item" : "Add Item") : "Login to Add"}
               </button>
+
+              {!user && (
+                <p className="text-muted small mt-2">
+                  You can view items but must log in to add, edit, or delete.
+                </p>
+              )}
             </form>
           </div>
         </div>
@@ -156,16 +222,18 @@ const Container = () => {
         {/* Right Side - Items List */}
         <div className="col-12 col-md-6">
           <div className="card border-0 shadow-sm p-4 h-100">
-            <h5 className="fw-semibold mb-3">Added Items List</h5>
+            <h5 className="fw-semibold mb-3">
+              {user ? "Your Items" : "All Items"}
+            </h5>
             <p className="text-muted">
-              {items.length} item{items.length !== 1 ? "s" : ""} added
+              {items.length} item{items.length !== 1 ? "s" : ""} found
             </p>
 
             {items.length === 0 ? (
               <div className="text-center text-muted p-5">
                 <div style={{ fontSize: "3rem" }}>🛒</div>
                 <p className="mt-3">
-                  No items added yet. Start by adding your first purchase item!
+                  {user ? "You haven't added any items yet." : "No items available yet."}
                 </p>
               </div>
             ) : (
@@ -187,32 +255,35 @@ const Container = () => {
                     <div>
                       <h6 className="mb-1">{item.name}</h6>
                       <p className="mb-0 text-muted">₹{item.price}</p>
+                      {item.userEmail && (
+                        <small className="text-muted d-block">By: {item.userEmail}</small>
+                      )}
                     </div>
                   </div>
 
-                  <div className="d-flex flex-column flex-sm-row gap-2">
-                    <button
-                      className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center"
-                      onClick={() => handleUpdate(item)}
-                    >
-                      <i
-                        className="bi bi-pencil-square me-1"
-                        style={{ color: "white", background: "transparent" }}
-                      ></i>
-                      Update
-                    </button>
+                  {/* Edit/Delete buttons are shown ONLY when logged in AND item belongs to the user */}
+                  {user && item.userId === user.uid ? (
+                    <div className="d-flex flex-column flex-sm-row gap-2">
+                      <button
+                        className="btn btn-secondary btn-sm d-flex align-items-center justify-content-center"
+                        onClick={() => handleUpdate(item)}
+                      >
+                        <i className="bi bi-pencil-square me-1 text-white"></i>
+                        Update
+                      </button>
 
-                    <button
-                      className="btn btn-danger btn-sm d-flex align-items-center justify-content-center"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <i
-                        className="bi bi-trash me-1"
-                        style={{ color: "white", background: "transparent" }}
-                      ></i>
-                      Delete
-                    </button>
-                  </div>
+                      <button
+                        className="btn btn-danger btn-sm d-flex align-items-center justify-content-center"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <i className="bi bi-trash me-1 text-white"></i>
+                        Delete
+                      </button>
+                    </div>
+                  ) : (
+                    // when not owner or not logged in, no edit/delete buttons shown
+                    <div style={{ minWidth: 0 }} />
+                  )}
                 </div>
               ))
             )}
@@ -221,7 +292,6 @@ const Container = () => {
       </div>
 
       {/* Modal for enlarged image */}
-      {/* Modal for enlarged image */}
       {selectedImage && (
         <div
           className="modal-overlay d-flex justify-content-center align-items-center"
@@ -229,7 +299,7 @@ const Container = () => {
         >
           <div
             className="modal-content position-relative"
-            onClick={(e) => e.stopPropagation()} // prevent modal close when clicking image
+            onClick={(e) => e.stopPropagation()}
           >
             <FaTimes
               className="modal-close-icon"
