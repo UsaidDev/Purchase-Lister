@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { FaUpload } from "react-icons/fa";
-import { db } from "../../Firebase/firebase"; // Your firebase config
+import { db } from "../../Firebase/firebase";
 import {
   collection,
   addDoc,
@@ -75,7 +75,7 @@ const Container = () => {
       console.error("Error saving item: ", error);
     }
   };
-
+  
   // Handle delete item
   const handleDelete = async (id) => {
     try {

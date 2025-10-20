@@ -13,8 +13,8 @@ import { auth } from "../../Firebase/firebase";
 
 const Signup = () => {
   const navigate = useNavigate();
-
-  // ✅ Form states
+  
+  // Form states
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +23,7 @@ const Signup = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Handle Signup
+  // Handle Signup
   const handleSignup = async (e) => {
     e.preventDefault();
 
@@ -46,7 +46,7 @@ const Signup = () => {
         password
       );
 
-      // ✅ Update user display name
+      // Update user display name
       await updateProfile(userCredential.user, {
         displayName: fullName,
       });
