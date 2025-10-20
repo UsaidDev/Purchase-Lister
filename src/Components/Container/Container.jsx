@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import { FaUpload } from "react-icons/fa";
+import { FaUpload, FaTimes } from "react-icons/fa";
 import { db } from "../../Firebase/firebase";
 import {
   collection,
@@ -19,9 +19,9 @@ const Container = () => {
   const [itemPrice, SetItemPrice] = useState("");
   const [items, SetItems] = useState([]);
   const [editId, setEditId] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null); // For modal preview
   const fileInputRef = useRef(null);
 
-  // Fetch items from Firestore in real-time
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
@@ -34,7 +34,6 @@ const Container = () => {
     return () => unsubscribe();
   }, []);
 
-  // Handle image selection
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -44,29 +43,20 @@ const Container = () => {
     }
   };
 
-  // Handle add/update item
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!itemName || !itemImage || !itemPrice) return;
 
-    const newItem = {
-      name: itemName,
-      image: itemImage,
-      price: itemPrice,
-    };
+    const newItem = { name: itemName, image: itemImage, price: itemPrice };
 
     try {
       if (editId) {
-        // Update existing document
         const itemRef = doc(db, "items", editId);
         await updateDoc(itemRef, newItem);
         setEditId(null);
       } else {
-        // Add new document
         await addDoc(collection(db, "items"), newItem);
       }
-
-      // Reset form
       SetItemName("");
       SetItemImage("");
       SetItemPrice("");
@@ -75,8 +65,7 @@ const Container = () => {
       console.error("Error saving item: ", error);
     }
   };
-  
-  // Handle delete item
+
   const handleDelete = async (id) => {
     try {
       await deleteDoc(doc(db, "items", id));
@@ -91,7 +80,6 @@ const Container = () => {
     }
   };
 
-  // Handle edit item
   const handleUpdate = (item) => {
     SetItemName(item.name);
     SetItemImage(item.image);
@@ -141,7 +129,8 @@ const Container = () => {
                     className="mt-3 rounded"
                     width="100"
                     height="100"
-                    style={{ objectFit: "cover" }}
+                    style={{ objectFit: "cover", cursor: "pointer" }}
+                    onClick={() => setSelectedImage(itemImage)}
                   />
                 )}
               </div>
@@ -192,7 +181,8 @@ const Container = () => {
                       width="70"
                       height="70"
                       className="rounded me-3"
-                      style={{ objectFit: "cover" }}
+                      style={{ objectFit: "cover", cursor: "pointer" }}
+                      onClick={() => setSelectedImage(item.image)}
                     />
                     <div>
                       <h6 className="mb-1">{item.name}</h6>
@@ -229,6 +219,37 @@ const Container = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal for enlarged image */}
+      {/* Modal for enlarged image */}
+      {selectedImage && (
+        <div
+          className="modal-overlay d-flex justify-content-center align-items-center"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="modal-content position-relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FaTimes
+              className="position-absolute top-0 end-0 m-2"
+              size={30}
+              style={{
+                cursor: "pointer",
+                color: "black", // changed from white to black
+                textShadow: "0 0 5px white", // adds contrast on bright backgrounds
+                zIndex: 10,
+              }}
+              onClick={() => setSelectedImage(null)}
+            />
+            <img
+              src={selectedImage}
+              alt="Enlarged"
+              className="modal-image rounded"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
