@@ -8,7 +8,7 @@ function Navbar() {
   const [user, setUser] = useState(null);
   const auth = getAuth();
 
-  // Check user login status
+  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -18,33 +18,31 @@ function Navbar() {
   }, [auth]);
 
   return (
-    <nav className="navbar_container d-flex justify-content-between align-items-center px-4 py-2 shadow-sm">
-      {/* Left Side: Logo + Name */}
+    <nav className="navbar_container d-flex justify-content-between align-items-center px-3 px-md-4 py-2 shadow-sm">
+      {/* Left Side: Logo + Site Name */}
       <div className="nav-left d-flex align-items-center gap-2">
         <i className="fa-solid fa-cart-shopping fs-5"></i>
-        <span className="site-name fw-semibold">Purchase Lister</span>
+        <span className="site-name fw-semibold fs-6 fs-md-5">Purchase Lister</span>
       </div>
 
-      {/* Right Side: Auth / User Info */}
-      <div className="nav-right d-flex align-items-center gap-3">
+      {/* Right Side: Auth Section */}
+      <div className="nav-right d-flex align-items-center gap-2 gap-md-3">
         {user ? (
-          // ✅ Show username when logged in
           <div className="d-flex align-items-center gap-2">
             <FaUserCircle className="fs-4" />
-            <span className="fw-semibold">{user.displayName || "User"}</span>
+            <span className="fw-semibold small">{user.displayName || "User"}</span>
           </div>
         ) : (
-          // 🚪 Show login/signup buttons when not logged in
           <>
             <Link
               to="/login"
-              className="btn btn-outline-dark btn-sm rounded-pill px-3 fw-semibold"
+              className="btn btn-outline-dark btn-sm rounded-pill px-2 px-md-3 py-1 fw-semibold"
             >
               Login
             </Link>
             <Link
               to="/signup"
-              className="btn btn-dark btn-sm rounded-pill px-3 fw-semibold"
+              className="btn btn-dark btn-sm rounded-pill px-2 px-md-3 py-1 fw-semibold"
             >
               Sign Up
             </Link>
