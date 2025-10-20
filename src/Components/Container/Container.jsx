@@ -19,7 +19,7 @@ const Container = () => {
   const [itemPrice, SetItemPrice] = useState("");
   const [items, SetItems] = useState([]);
   const [editId, setEditId] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null); // For modal preview
+  const [selectedImage, setSelectedImage] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -229,17 +229,11 @@ const Container = () => {
         >
           <div
             className="modal-content position-relative"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()} // prevent modal close when clicking image
           >
             <FaTimes
-              className="position-absolute top-0 end-0 m-2"
+              className="modal-close-icon"
               size={30}
-              style={{
-                cursor: "pointer",
-                color: "black", // changed from white to black
-                textShadow: "0 0 5px white", // adds contrast on bright backgrounds
-                zIndex: 10,
-              }}
               onClick={() => setSelectedImage(null)}
             />
             <img
