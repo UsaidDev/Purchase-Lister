@@ -1,16 +1,15 @@
-
 .form-control:focus {
   box-shadow: none !important;
-  border-color: #ced4da !important; /* Keeps normal gray border */
+  border-color: #ced4da !important;
 }
 @media (min-width: 992px) {
   .container {
-    margin-top: 80px; /* only for large screens */
+    margin-top: 80px;
   }
 }
 
 @media (max-width: 991px) {
   .container {
-    margin-top: 50px; /* no top margin for mobile/tablet */
+    margin-top: 50px;
   }
 }
