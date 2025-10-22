@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import { Link } from "react-router-dom";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged ,signOut} from "firebase/auth";
 import { FaUserCircle } from "react-icons/fa";
 
 function Navbar() {
   const [user, setUser] = useState(null);
   const auth = getAuth();
+  const navigate = useNavigate();
+  
+  const handleLogout=()=>{
+    console.log("Logout Successfully completed")
+    signOut(auth)
+    navigate('/')
+  }
 
   // Listen for auth state changes
   useEffect(() => {
@@ -31,6 +39,7 @@ function Navbar() {
           <div className="d-flex align-items-center gap-2">
             <FaUserCircle className="fs-4" />
             <span className="fw-semibold small">{user.displayName || "User"}</span>
+            <button onClick={handleLogout}>Logout</button>
           </div>
         ) : (
           <>

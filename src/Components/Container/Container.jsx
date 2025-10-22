@@ -3,7 +3,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { FaUpload, FaTimes } from "react-icons/fa";
 import { db } from "../../Firebase/firebase";
-
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   collection,
@@ -11,9 +10,11 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  onSnapshot,
   setDoc,
   getDoc,
+  onSnapshot,
+  query,
+  where,
 } from "firebase/firestore";
 import "./Container.css";
 
@@ -24,29 +25,41 @@ const Container = () => {
   const [items, SetItems] = useState([]);
   const [editId, setEditId] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-  const fileInputRef = useRef(null);
   const [user, setUser] = useState(null);
+
+  const fileInputRef = useRef(null);
   const auth = getAuth();
 
+  // 🔹 Listen for auth changes and fetch user items
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+
+      if (currentUser) {
+        const q = query(
+          collection(db, "items"),
+          where("email", "==", currentUser.email)
+        );
+
+        const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+          const data = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          SetItems(data);
+        });
+
+        // Cleanup snapshot when auth changes
+        return () => unsubscribeSnapshot();
+      } else {
+        SetItems([]); // clear items if user logs out
+      }
     });
 
-    const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      SetItems(data);
-    });
-
-    return () => {
-      unsubscribe();
-      unsubscribeAuth();
-    };
+    return () => unsubscribeAuth();
   }, [auth]);
 
+  // 🔹 Handle image upload
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -56,11 +69,17 @@ const Container = () => {
     }
   };
 
+  // 🔹 Add or update item
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!itemName || !itemImage || !itemPrice) return;
+    if (!itemName || !itemImage || !itemPrice || !user) return;
 
-    const newItem = { name: itemName, image: itemImage, price: itemPrice };
+    const newItem = {
+      name: itemName,
+      image: itemImage,
+      price: itemPrice,
+      email: user.email, // associate item with logged-in user
+    };
 
     try {
       if (editId) {
@@ -70,6 +89,8 @@ const Container = () => {
       } else {
         await addDoc(collection(db, "items"), newItem);
       }
+
+      // Reset form
       SetItemName("");
       SetItemImage("");
       SetItemPrice("");
@@ -79,17 +100,16 @@ const Container = () => {
     }
   };
 
+  // 🔹 Delete item (move to purchased)
   const handleDelete = async (id) => {
     try {
-      // await deleteDoc(doc(db, "items", id));
-      const item_new_Ref = doc(db, "items", id);
-      const itemSnap = await getDoc(item_new_Ref);
+      const itemRef = doc(db, "items", id);
+      const itemSnap = await itemRef.get?.() || await getDoc(itemRef);
 
       if (itemSnap.exists()) {
         const itemData = itemSnap.data();
-        // console.log(itemData);
         await setDoc(doc(db, "purchased", id), itemData);
-        await deleteDoc(item_new_Ref);
+        await deleteDoc(itemRef);
 
         if (editId === id) {
           setEditId(null);
@@ -97,6 +117,7 @@ const Container = () => {
           SetItemImage("");
           SetItemPrice("");
         }
+
         console.log("Item moved to purchased successfully");
       } else {
         console.log("Item not found");
@@ -106,6 +127,7 @@ const Container = () => {
     }
   };
 
+  // 🔹 Prefill form for update
   const handleUpdate = (item) => {
     SetItemName(item.name);
     SetItemImage(item.image);
@@ -118,8 +140,7 @@ const Container = () => {
       {user ? (
         <>
           <div className="row g-4">
-            {/* Left Side - Add / Update Item */}
-
+            {/* Left: Add / Update Item */}
             <div className="col-12 col-md-6">
               <div className="card border-0 shadow-sm p-4">
                 <h5 className="fw-semibold mb-4">
@@ -182,7 +203,7 @@ const Container = () => {
               </div>
             </div>
 
-            {/* Right Side - Items List */}
+            {/* Right: Items List */}
             <div className="col-12 col-md-6">
               <div className="card border-0 shadow-sm p-4 h-100">
                 <h5 className="fw-semibold mb-3">Added Items List</h5>
@@ -227,10 +248,7 @@ const Container = () => {
                         >
                           <i
                             className="bi bi-pencil-square me-1"
-                            style={{
-                              color: "white",
-                              background: "transparent",
-                            }}
+                            style={{ color: "white", background:"none" }}
                           ></i>
                           Update
                         </button>
@@ -241,12 +259,9 @@ const Container = () => {
                         >
                           <i
                             className="bi bi-check2-circle me-2"
-                            style={{
-                              color: "white",
-                              background: "transparent",
-                            }}
+                            style={{ color: "white", background:"none" }}
                           ></i>
-                          Puchased
+                          Purchased
                         </button>
                       </div>
                     </div>
@@ -256,7 +271,7 @@ const Container = () => {
             </div>
           </div>
 
-          {/* Modal for enlarged image */}
+          {/* Image Modal */}
           {selectedImage && (
             <div
               className="modal-overlay d-flex justify-content-center align-items-center"
@@ -269,12 +284,7 @@ const Container = () => {
                 <FaTimes
                   className="position-absolute top-0 end-0 m-2"
                   size={30}
-                  style={{
-                    cursor: "pointer",
-                    color: "black",
-                    textShadow: "0 0 5px white",
-                    zIndex: 10,
-                  }}
+                  style={{ cursor: "pointer", color: "black", zIndex: 10 }}
                   onClick={() => setSelectedImage(null)}
                 />
                 <img
@@ -287,14 +297,9 @@ const Container = () => {
           )}
         </>
       ) : (
-        <>
-          <div className="py-5">
-            <h3 className="fw-bold mb-3 text-center">Public Gallery</h3>
-            <p className="text-muted text-center mb-4">
-              Browse items from the community
-            </p>
-          </div>
-        </>
+        <div className="text-center p-5">
+          <h5 className="text-muted">Please log in to add your items.</h5>
+        </div>
       )}
     </div>
   );
