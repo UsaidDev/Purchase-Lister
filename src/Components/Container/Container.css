@@ -58,6 +58,18 @@
   z-index: 20; /* higher than image */
 }
 
+
+.card img,
+.card-img-top {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.card:hover img {
+  transform: scale(1.05);
+}
+
+
 /* Mobile-specific */
 @media (max-width: 768px) {
   .modal-image {
@@ -66,7 +78,7 @@
   .modal-close-icon {
     top: 0.5rem;
     right: 0.5rem;
-    font-size: 1.5rem; /* bigger on mobile */
+    font-size: 1.5rem;
     padding: 0.3rem;
   }
 }
