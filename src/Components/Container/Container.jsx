@@ -26,11 +26,9 @@ const Container = () => {
   const [editId, setEditId] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [user, setUser] = useState(null);
-
   const fileInputRef = useRef(null);
   const auth = getAuth();
 
-  // 🔹 Listen for auth changes and fetch user items
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -49,10 +47,9 @@ const Container = () => {
           SetItems(data);
         });
 
-        // Cleanup snapshot when auth changes
         return () => unsubscribeSnapshot();
       } else {
-        SetItems([]); // clear items if user logs out
+        SetItems([]);
       }
     });
 
@@ -69,7 +66,6 @@ const Container = () => {
     }
   };
 
-  // 🔹 Add or update item
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!itemName || !itemImage || !itemPrice || !user) return;
@@ -78,7 +74,7 @@ const Container = () => {
       name: itemName,
       image: itemImage,
       price: itemPrice,
-      email: user.email, // associate item with logged-in user
+      email: user.email,
     };
 
     try {
@@ -104,7 +100,7 @@ const Container = () => {
   const handleDelete = async (id) => {
     try {
       const itemRef = doc(db, "items", id);
-      const itemSnap = await itemRef.get?.() || await getDoc(itemRef);
+      const itemSnap = (await itemRef.get?.()) || (await getDoc(itemRef));
 
       if (itemSnap.exists()) {
         const itemData = itemSnap.data();
@@ -134,13 +130,10 @@ const Container = () => {
     SetItemPrice(item.price);
     setEditId(item.id);
   };
-
   return (
     <div className="container mb-5">
-      {user ? (
         <>
           <div className="row g-4">
-            {/* Left: Add / Update Item */}
             <div className="col-12 col-md-6">
               <div className="card border-0 shadow-sm p-4">
                 <h5 className="fw-semibold mb-4">
@@ -248,7 +241,7 @@ const Container = () => {
                         >
                           <i
                             className="bi bi-pencil-square me-1"
-                            style={{ color: "white", background:"none" }}
+                            style={{ color: "white", background: "none" }}
                           ></i>
                           Update
                         </button>
@@ -259,7 +252,7 @@ const Container = () => {
                         >
                           <i
                             className="bi bi-check2-circle me-2"
-                            style={{ color: "white", background:"none" }}
+                            style={{ color: "white", background: "none" }}
                           ></i>
                           Purchased
                         </button>
@@ -296,13 +289,7 @@ const Container = () => {
             </div>
           )}
         </>
-      ) : (
-        <div className="text-center p-5">
-          <h5 className="text-muted">Please log in to add your items.</h5>
-        </div>
-      )}
     </div>
   );
 };
-
 export default Container;

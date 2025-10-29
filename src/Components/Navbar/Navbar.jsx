@@ -15,8 +15,7 @@ function Navbar() {
     signOut(auth)
     navigate('/')
   }
-
-  // Listen for auth state changes
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);

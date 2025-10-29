@@ -13,7 +13,6 @@ import { auth } from "../../Firebase/firebase";
 
 const Signup = () => {
   const navigate = useNavigate();
-  
   // Form states
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
