@@ -293,7 +293,7 @@ const Container = () => {
                 purchasedItems.map((item) => (
                   <div
                     key={item.id}
-                    className="d-flex align-items-center justify-content-between border rounded-3 p-3 mb-3 bg-light"
+                    className="d-flex align-items-center justify-content-between border rounded-3 p-3 mb-3"
                   >
                     <div className="d-flex align-items-center">
                       <img
